@@ -195,7 +195,9 @@ MEDALS = [
 
 STAR_ICON_TOP3 = '<tg-emoji emoji-id="4940458991772763887">⭐️</tg-emoji>'
 STAR_ICON_REST = '<tg-emoji emoji-id="5924870095925942277">⭐️</tg-emoji>'
+STAR_WORD_ICON = '<tg-emoji emoji-id="4940458991772763887">⭐️</tg-emoji>'
 SLOT_ICON = '<tg-emoji emoji-id="5915833712368424979">🎰</tg-emoji>'
+STARSTRUCK_ICON = '<tg-emoji emoji-id="4952118595325790401">🤩</tg-emoji>'
 CUP_ICON = '<tg-emoji emoji-id="5388773012478659078">🏆</tg-emoji>'
 
 
@@ -211,9 +213,9 @@ def build_top_text(rows) -> str:
         star_icon = STAR_ICON_TOP3 if i < 3 else STAR_ICON_REST
         name = username or "Без имени"
         lines.append(f"{MEDALS[i]} {name}")
-        lines.append(f"{star_icon} {stars} {stars_word(stars)}")
+        lines.append(f"{star_icon} {stars} {STAR_WORD_ICON}{stars_word(stars)}")
         lines.append(f"{SLOT_ICON} {spins} {spins_word(spins)}")
-        lines.append(f"🎫 {tickets} {tickets_word(tickets)}")
+        lines.append(f"{STARSTRUCK_ICON} {tickets} {tickets_word(tickets)}")
         lines.append("")
     return "\n".join(lines).strip()
 
