@@ -33,9 +33,6 @@ STARS_PER_SPIN = 2
 # звёзды за них — те же STARS_PER_SPIN, отдельно ничего доп. не даётся
 TICKET_ON_WIN = 1
 
-# минимальная пауза между прокрутами одного юзера, сек (антиспам)
-SPIN_COOLDOWN = 3
-
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("slot-bot")
 
@@ -84,15 +81,6 @@ def upsert_user(user_id: int, name: str) -> None:
             "ON CONFLICT(user_id) DO UPDATE SET username=excluded.username",
             (user_id, name),
         )
-
-
-def get_last_spin_ts(user_id: int) -> float:
-    with closing(db_connect()) as conn:
-        row = conn.execute(
-            "SELECT ts FROM spins WHERE user_id=? ORDER BY ts DESC LIMIT 1",
-            (user_id,),
-        ).fetchone()
-        return row[0] if row else 0
 
 
 def add_spin(user_id: int, stars: int, ticket: int, combo: str) -> None:
@@ -251,32 +239,18 @@ async def handle_slot(message: Message) -> None:
 
     upsert_user(user.id, user.full_name)
 
-    last_ts = get_last_spin_ts(user.id)
-    if time.time() - last_ts < SPIN_COOLDOWN:
-        return  # тихо игнорируем спам-прокруты
-
     value = message.dice.value
-    log.info("Пользователь %s (%s) выбил значение %s", user.id, user.full_name, value)
-
     combo = check_combo(value)
     ticket = TICKET_ON_WIN if combo else 0
 
-    # звёзды начисляются за ЛЮБОЙ прокрут
+    # звёзды начисляются за ЛЮБОЙ прокрут, билет — только за выигрышную комбинацию
     add_spin(user.id, STARS_PER_SPIN, ticket, combo or "-")
 
-    if combo:
-        text = (
-            f"🎉 {user.full_name}, выпало <b>{combo}</b>!\n"
-            f"⭐️ +{STARS_PER_SPIN} {stars_word(STARS_PER_SPIN)}\n"
-            f"🎫 +{ticket} {tickets_word(ticket)}"
-        )
-    else:
-        text = (
-            f"Мимо, {user.full_name}. Попробуй ещё раз 🎰\n"
-            f"⭐️ +{STARS_PER_SPIN} {stars_word(STARS_PER_SPIN)}"
-        )
-
-    await message.reply(text)
+    log.info(
+        "Пользователь %s (%s): значение=%s комбо=%s +%s звёзд +%s билет(ов)",
+        user.id, user.full_name, value, combo, STARS_PER_SPIN, ticket,
+    )
+    # намеренно ничего не отвечаем в чат — бот просто молча обновляет топ
 
 
 @dp.message(is_top_word)
